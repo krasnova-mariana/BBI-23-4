@@ -1,0 +1,200 @@
+//Var 8
+using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+
+abstract class Task
+{
+    protected string text;
+    public string Text
+    {
+        get => text;
+        protected set => text = value;
+    }
+    public Task(string text)
+    {
+        this.text = text;
+    }
+    protected abstract void ParseText();
+}
+
+class Task1 : Task
+{
+    private string task_1 = "Какие буквы присутствуют в обоих словах:" + "\n";
+    public string Task_1
+    {
+        get => task_1;
+        protected set => task_1 = value;
+    }
+    [JsonConstructor]
+    public Task1(string text) : base(text)
+    {
+        ParseText();
+    }
+    protected override void ParseText()
+    {
+        string inputUpper = text.ToUpper(); 
+
+        HashSet<char> uniqueChars = new HashSet<char>();
+
+        foreach (char c in inputUpper)
+        {
+            if (char.IsLetter(c))
+            {
+                uniqueChars.Add(c);
+            }
+        }
+
+        char[] result = new char[uniqueChars.Count];
+        uniqueChars.CopyTo(result);
+
+        foreach (char c in result)
+        {
+            task_1 += c + "\n"; ;
+        }
+    }
+    public override string ToString()
+    {
+        return task_1;
+    }
+}
+
+class Task2 : Task
+{
+    private string task_2 = "";
+    public string Task_2
+    {
+        get => task_2;
+        protected set => task_2 = value;
+    }
+
+    [JsonConstructor]
+    public Task2(string text) : base(text)
+    {
+        ParseText();
+    }
+
+    protected override void ParseText()
+    {
+        string[] words = Text.Split(new char[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        int totalSyllables = 0;
+        int totalWords = words.Length;
+
+        foreach (string word in words)
+        {
+            int syllablesCount = CountSyllablesInWord(word);
+            totalSyllables += syllablesCount;
+        }
+
+        double averageSyllables = (double)totalSyllables / totalWords;
+        task_2 = $"Среднее количество слогов в словах: {averageSyllables}";
+    }
+
+    private int CountSyllablesInWord(string word)
+    {
+        int syllables = 0;
+        bool isPrevVowel = false;
+
+        foreach (char letter in word.ToLower())
+        {
+            if ("aeiouy".Contains(letter))
+            {
+                if (!isPrevVowel)
+                {
+                    syllables++;
+                    isPrevVowel = true;
+                }
+            }
+            else
+            {
+                isPrevVowel = false;
+            }
+        }
+
+        if (word.EndsWith("e") && syllables > 1)
+        {
+            syllables--;
+        }
+
+        return syllables == 0 ? 1 : syllables;
+    }
+
+
+    public override string ToString()
+    {
+        return "" + "\n" + task_2;
+    }
+}
+
+class JsonIO
+{
+    public static void Write<T>(T obj, string filePath)
+    {
+        using (FileStream f = new FileStream(filePath, FileMode.OpenOrCreate))
+        {
+            JsonSerializer.Serialize(f, obj);
+        }
+    }
+    public static T Read<T>(string filePath)
+    {
+        using (FileStream f = new FileStream(filePath, FileMode.OpenOrCreate))
+        {
+            return JsonSerializer.Deserialize<T>(f);
+        }
+        return default(T);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Task1 text1 = new Task1("Малина клубника");
+        Console.WriteLine(text1);
+        Task2 text2 = new Task2("Я хочу кушать очень сильно, не могу думать ни о чем другом");
+        Console.WriteLine(text2);
+        Console.WriteLine();
+
+        Task[] task12 = new Task[] { text1, text2 };
+
+        string path = @"C:\Users\m232258\";
+        string folder = "Solution";
+        path = Path.Combine(path, folder);
+
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+
+        string f1 = "task_1.json";
+        string f2 = "task_2.json";
+
+        f1 = Path.Combine(path, f1);
+        f2 = Path.Combine(path, f2);
+
+        if (!File.Exists(f1))
+        {
+            JsonText.Write<Task1>(task12[0] as Task1, f1);
+        }
+        else
+        {
+            var fread1 = JsonText.Read<Task1>(f1);
+            Console.WriteLine(fread1);
+        }
+
+        if (!File.Exists(f2))
+        {
+            JsonText.Write<Task2>(task12[1] as Task2, f2);
+        }
+        else
+        {
+            var fread2 = JsonText.Read<Task2>(f2);
+            Console.WriteLine(fread2);
+        }
+    }
+}
